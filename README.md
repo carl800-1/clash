@@ -7,7 +7,7 @@
 ### 拉取镜像
 
 ```bash
-docker pull docker.io/carl8001/clash:latest
+docker pull docker.io/carl800-1/clash:latest
 ```
 
 ### 最简运行
@@ -19,7 +19,7 @@ docker run -d \
   -p 7891:7891 \
   -p 9090:9090 \
   -v ./config.yaml:/root/.config/mihomo/config.yaml:ro \
-  carl8001/clash:latest
+  carl800-1/clash:latest
 ```
 
 ### docker-compose
@@ -27,7 +27,7 @@ docker run -d \
 ```yaml
 services:
   mihomo:
-    image: carl8001/clash:latest
+    image: carl800-1/clash:latest
     container_name: mihomo
     restart: unless-stopped
     ports:

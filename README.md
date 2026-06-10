@@ -1,13 +1,13 @@
 # mihomo (Clash Meta) Docker
 
-基于 MetaCubeX/mihomo 源码构建的 Docker 镜像，支持多平台（amd64/arm64），通过 GitHub Actions 自动构建并推送到 Docker Hub。
+基于 MetaCubeX/mihomo 源码构建的 Docker 镜像，支持 amd64 架构，通过 GitHub Actions 自动构建。
 
 ## 快速开始
 
 ### 拉取镜像
 
 ```bash
-docker pull docker.io/carl800-1/clash:latest
+docker pull ghcr.io/carl800-1/clash:latest
 ```
 
 ### 最简运行
@@ -31,9 +31,9 @@ services:
     container_name: mihomo
     restart: unless-stopped
     ports:
-      - "7890:7890"   # HTTP 代理
-      - "7891:7891"   # SOCKS5 代理
-      - "9090:9090"   # RESTful API
+      - "7890:7890"
+      - "7891:7891"
+      - "9090:9090"
     volumes:
       - ./config.yaml:/root/.config/mihomo/config.yaml:ro
 ```
@@ -54,11 +54,7 @@ services:
 | 9090 | TCP | RESTful API |
 | 53 | UDP | DNS |
 
-## 在 Kubernetes / 其他环境中使用
-
-镜像支持 amd64 和 arm64 架构。
-
-## 构建
+## 本地构建
 
 ```bash
 docker build -t clash:local .
@@ -66,4 +62,4 @@ docker build -t clash:local .
 
 ## License
 
-GPL-3.0 (mihomo 上游项目许可证)
+GPL-3.0

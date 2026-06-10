@@ -1,0 +1,4 @@
+# 忽略不需要提交到镜像的文件
+.github
+*.md
+LICENSE

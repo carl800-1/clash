@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clash Dashboard</title>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--accent:#6366f1;--green:#22c55e;--red:#ef4444;--yellow:#eab308}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:var(--card);padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:18px;font-weight:600}
+.header .status{display:flex;align-items:center;gap:8px;font-size:13px}
+.status .dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.container{max-width:960px;margin:0 auto;padding:24px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+.stat-card .label{font-size:12px;color:#94a3b8;margin-bottom:4px}
+.stat-card .value{font-size:24px;font-weight:700}
+.tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--card);border-radius:8px;padding:4px}
+.tab{padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;border:none;background:transparent;color:#94a3b8;transition:all .2s}
+.tab.active{background:var(--accent);color:#fff}
+.tab:hover:not(.active){color:var(--text)}
+.panel{display:none}
+.panel.active{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.card h3{font-size:14px;margin-bottom:12px;color:#94a3b8}
+select,input[type="text"]{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none}
+select:focus,input:focus{border-color:var(--accent)}
+.btn{padding:10px 20px;border-radius:8px;border:none;font-size:14px;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.9}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{opacity:.9}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:13px}
+th{color:#94a3b8;font-weight:500}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(34,197,94,.15);color:var(--green)}
+.badge-red{background:rgba(239,68,68,.15);color:var(--red)}
+.badge-blue{background:rgba(99,102,241,.15);color:var(--accent)}
+.log-box{background:#0a0f1a;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
+.proxy-list{display:flex;flex-direction:column;gap:8px}
+.proxy-item{display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .2s}
+.proxy-item:hover{border-color:var(--accent)}
+.proxy-item.active{border-color:var(--green);background:rgba(34,197,94,.05)}
+.proxy-item .name{font-size:14px;font-weight:500}
+.proxy-item .type{font-size:11px;color:#94a3b8}
+.speed-test{margin-top:16px}
+.speed-bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-top:4px}
+.speed-bar .fill{height:100%;border-radius:3px;transition:width .5s}
+@media(max-width:600px){.container{padding:16px}.stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Clash Dashboard</h1>
+  <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">连接中...</span></div>
+</div>
+<div class="container">
+  <div class="stats">
+    <div class="stat-card"><div class="label">上传速度</div><div class="value" id="upSpeed">--</div></div>
+    <div class="stat-card"><div class="label">下载速度</div><div class="value" id="downSpeed">--</div></div>
+    <div class="stat-card"><div class="label">上传总量</div><div class="value" id="upTotal">--</div></div>
+    <div class="stat-card"><div class="label">下载总量</div><div class="value" id="downTotal">--</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('proxies')">代理</button>
+    <button class="tab" onclick="switchTab('rules')">规则</button>
+    <button class="tab" onclick="switchTab('connections')">连接</button>
+    <button class="tab" onclick="switchTab('logs')">日志</button>
+    <button class="tab" onclick="switchTab('config')">配置</button>
+  </div>
+
+  <div class="panel active" id="panel-proxies">
+    <div class="card">
+      <h3>代理模式</h3>
+      <select id="proxyMode" onchange="setMode(this.value)">
+        <option value="rule">Rule - 规则模式</option>
+        <option value="global">Global - 全局代理</option>
+        <option value="direct">Direct - 直连</option>
+      </select>
+    </div>
+    <div class="card">
+      <h3>节点列表</h3>
+      <div class="proxy-list" id="proxyList"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-rules">
+    <div class="card"><h3>规则列表</h3><div id="rulesList"></div></div>
+  </div>
+
+  <div class="panel" id="panel-connections">
+    <div class="card">
+      <h3>活跃连接 <span style="float:right;cursor:pointer;color:var(--red)" onclick="closeAllConnections()">全部断开</span></h3>
+      <table><thead><tr><th>源</th><th>目标</th><th>类型</th><th>节点</th><th>速度</th></tr></thead><tbody id="connTable"></tbody></table>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-logs">
+    <div class="card"><h3>实时日志</h3><div class="log-box" id="logBox"></div></div>
+  </div>
+
+  <div class="panel" id="panel-config">
+    <div class="card">
+      <h3>配置管理</h3>
+      <textarea id="configEditor" style="width:100%;height:400px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:monospace;font-size:12px;padding:12px;resize:vertical"></textarea>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="saveConfig()">保存配置</button>
+        <button class="btn btn-primary" onclick="reloadConfig()">重载配置</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let proxies = [], connections = [], logs = [], rules = [];
+
+async function api(path, opts={}) {
+  try {
+    const r = await fetch(API + path, opts);
+    return await r.json();
+  } catch(e) { return null; }
+}
+
+async function checkStatus() {
+  const v = await api('/version');
+  if (v && v.version) {
+    document.getElementById('statusDot').style.background = 'var(--green)';
+    document.getElementById('statusText').textContent = 'mihomo ' + v.version;
+  } else {
+    document.getElementById('statusDot').style.background = 'var(--red)';
+    document.getElementById('statusText').textContent = '未连接';
+  }
+}
+
+async function loadStats() {
+  const s = await api('/traffic');
+  if (!s) return;
+  document.getElementById('upSpeed').textContent = fmtSpeed(s.up);
+  document.getElementById('downSpeed').textContent = fmtSpeed(s.down);
+  document.getElementById('upTotal').textContent = fmtBytes(s.upTotal || 0);
+  document.getElementById('downTotal').textContent = fmtBytes(s.downTotal || 0);
+}
+
+function fmtSpeed(b) { return b > 1048576 ? (b/1048576).toFixed(1)+' MB/s' : (b/1024).toFixed(1)+' KB/s'; }
+function fmtBytes(b) { return b > 1073741824 ? (b/1073741824).toFixed(2)+' GB' : b > 1048576 ? (b/1048576).toFixed(1)+' MB' : (b/1024).toFixed(0)+' KB'; }
+
+async function loadProxies() {
+  const g = await api('/proxies');
+  if (!g) return;
+  proxies = g.proxies || [];
+  const list = document.getElementById('proxyList');
+  list.innerHTML = '';
+  for (const [name, p] of Object.entries(proxies)) {
+    if (['DIRECT','REJECT','GLOBAL','Selector'].includes(p.type)) continue;
+    const div = document.createElement('div');
+    div.className = 'proxy-item' + (p.now === name ? ' active' : '');
+    div.innerHTML = `<div><div class="name">${name}</div><div class="type">${p.type}</div></div><span class="badge badge-blue">${p.now || '--'}</span>`;
+    div.onclick = () => selectProxy(name);
+    list.appendChild(div);
+  }
+}
+
+async function selectProxy(name) {
+  await api('/proxies/GLOBAL', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name})});
+  loadProxies();
+}
+
+async function setMode(mode) {
+  await api('/configs', {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({mode})});
+}
+
+async function loadRules() {
+  const r = await api('/rules');
+  if (!r) return;
+  rules = r.rules || [];
+  const div = document.getElementById('rulesList');
+  div.innerHTML = '<table><thead><tr><th>类型</th><th>内容</th><th>代理</th></tr></thead><tbody>' +
+    rules.map(r => `<tr><td><span class="badge badge-blue">${r.type}</span></td><td>${r.payload||''}</td><td>${r.proxy||''}</td></tr>`).join('') +
+    '</tbody></table>';
+}
+
+async function loadConnections() {
+  const c = await api('/connections');
+  if (!c) return;
+  connections = c.connections || [];
+  const tbody = document.getElementById('connTable');
+  tbody.innerHTML = connections.map(c =>
+    `<tr><td>${c.metadata.sourceIP}:${c.metadata.sourcePort}</td><td>${c.metadata.destinationIP||c.metadata.host}</td><td>${c.metadata.type}</td><td>${c.chains?c.chains[c.chains.length-1]:'--'}</td><td>${fmtSpeed(c.speed||0)}</td></tr>`
+  ).join('');
+}
+
+async function closeAllConnections() {
+  await api('/connections', {method:'DELETE'});
+  loadConnections();
+}
+
+async function loadLogs() {
+  const l = await api('/logs');
+  if (!l) return;
+  const box = document.getElementById('logBox');
+  box.innerHTML = (l.logs||[]).map(l => `<span style="color:${l.type==='error'?'var(--red)':l.type==='warning'?'var(--yellow)':'inherit'}">[${l.type.toUpperCase()}] ${l.payload}</span>`).join('\n');
+  box.scrollTop = box.scrollHeight;
+}
+
+async function loadConfig() {
+  const c = await api('/configs');
+  if (!c) return;
+  document.getElementById('configEditor').value = JSON.stringify(c, null, 2);
+}
+
+async function saveConfig() {
+  try {
+    const cfg = JSON.parse(document.getElementById('configEditor').value);
+    await api('/configs', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(cfg)});
+    alert('配置已保存');
+  } catch(e) { alert('JSON 格式错误: ' + e.message); }
+}
+
+async function reloadConfig() {
+  await api('/configs/geo', {method:'POST'});
+  alert('配置已重载');
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'rules') loadRules();
+  if (name === 'connections') loadConnections();
+  if (name === 'logs') loadLogs();
+  if (name === 'config') loadConfig();
+}
+
+checkStatus();
+loadStats();
+loadProxies();
+setInterval(loadStats, 2000);
+setInterval(loadProxies, 5000);
+</script>
+</body>
+</html>

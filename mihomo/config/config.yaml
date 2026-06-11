@@ -1,0 +1,57 @@
+# Clash Meta 配置文件
+# 适用于 mihomo + Metacubexd Docker 方案
+# 绿联 NAS 4800P (amd64)
+
+# 代理端口
+mixed-port: 7890
+socks-port: 7891
+allow-lan: true
+bind-address: '*'
+mode: rule
+log-level: info
+
+# API 控制器（供 Metacubexd 使用）
+external-controller: '0.0.0.0:9090'
+secret: ''
+
+# DNS 配置
+dns:
+  enable: true
+  listen: 0.0.0.0:53
+  nameserver:
+    - 223.5.5.5
+    - 114.114.114.114
+  fallback:
+    - tls://8.8.8.8:853
+    - tls://1.1.1.1:853
+
+# 代理节点（在这里添加你的机场节点）
+proxies:
+  - name: "请在此处添加你的代理节点"
+    type: ss
+    server: your-server.com
+    port: 443
+    cipher: chacha20-ietf-poly1305
+    password: your-password
+
+# 代理组
+proxy-groups:
+  - name: "🚀 节点选择"
+    type: select
+    proxies:
+      - "请在此处添加你的代理节点"
+      - DIRECT
+
+  - name: "🌍 全局代理"
+    type: select
+    proxies:
+      - "🚀 节点选择"
+      - DIRECT
+
+# 规则
+rules:
+  - DOMAIN-SUFFIX,google.com,🌍 全局代理
+  - DOMAIN-SUFFIX,youtube.com,🌍 全局代理
+  - DOMAIN-SUFFIX,github.com,🌍 全局代理
+  - GEOIP,CN,DIRECT
+  - MATCH,🚀 节点选择

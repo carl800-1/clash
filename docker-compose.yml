@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  clash:
+    build:
+      context: ./single-container
+      dockerfile: Dockerfile
+    container_name: clash
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./mihomo/config:/root/.config/mihomo
+    environment:
+      - TZ=Asia/Shanghai
